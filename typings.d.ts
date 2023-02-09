@@ -12,3 +12,8 @@ interface item{
 interface IDByOnwer {
   id: number
 }
+
+interface DataMap{
+  address: string
+  isOpen : boolean
+}
