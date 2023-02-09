@@ -10,6 +10,8 @@ import {
   ConnectButton,
   getDefaultWallets,
   RainbowKitProvider,
+  darkTheme,
+  lightTheme
 } from '@rainbow-me/rainbowkit'
 import { ContractProvider } from '../context/ContratContext'
 const { chains, provider } = configureChains(
@@ -37,7 +39,14 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ContractProvider>
       <WagmiConfig client={wagmiClient}>
-        <RainbowKitProvider chains={chains}>
+        <RainbowKitProvider
+           coolMode
+          chains={chains}
+          theme={darkTheme({
+            accentColor: 'white',
+            accentColorForeground: 'black',
+          })}
+        >
           <Component {...pageProps} />
         </RainbowKitProvider>
       </WagmiConfig>
