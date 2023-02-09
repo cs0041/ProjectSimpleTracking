@@ -1,12 +1,18 @@
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { ContractContext } from "../context/ContratContext"
 import Loader from "./Loader"
 
 type Props = {}
 
 function FindID({}: Props) {
-  const {loadMap,loadingMap,orderMap} = useContext(ContractContext)
+  const {loadMap,loadingMap,orderMap,setOrderMap} = useContext(ContractContext)
   const [id, setId] = useState<string>("")
+
+  useEffect(() => {
+  //  loadMap("-1")
+  setOrderMap([])
+  }, [])
+  
 
   return (
     <div className="flex flex-col flex-1 w-1/3 m-auto my-10 space-y-10">
@@ -78,7 +84,7 @@ function FindID({}: Props) {
             <div>
               {item.where} ---- owner {item.owner}
             </div>
-          )) : (<h1>No have this id</h1>)}
+          )) : (<h1>Empty</h1>)}
         </div>
       )}
     </div>
