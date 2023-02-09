@@ -2,35 +2,25 @@ import React, {createContext, useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import { contractABI,contractAddress } from '../utils/ContractTracking'
 
+
+
 interface IContract {
   loadMap: (_id: string) => Promise<void>
   orderMap: MapRoute[]
   loadingMap: boolean
   loadAllIDByOwner: () => Promise<void>
   allIdOwner: IDByOnwer[]
-  loadingAllIdOwner:boolean
-  // loadingOrderSell: boolean
-  // loadingOrderBuy: boolean
-  // loadOrderBook: () => Promise<void>
-  // orderBookSell: Order[]
-  // orderBookBuy: Order[]
-  // priceToken: string
-  // sendTxMarketOrder: (side: number, amount: number | string) => Promise<void>
-  // balancesSpotToken0: string
-  // balancesTradeToken0: string
-  // balancesSpotToken1: string
-  // balancesTradeToken1: string
-  // sendTxLimitOrder : (side: number, amount: number | string, price: number | string) => Promise<void>
-  // isLoadingOrderBookByAddress:boolean
-  // orderBookByAddress:Order[]
-  // loadOrderBookByAddress: (address: string) => Promise<void>
-  // sendTxCancelOrder: (side: number, id: number | string) => Promise<void>
-  // sendTxUpdateOrder: (side: number, id: number, newAmount: number | string, newPriceOrder: number | string) => Promise<void>
-  // marketEvent: EventMarketOrder[]
-  // historyOrderEvent:EventAllOrder[]
-  // sumMarketEvent:EventMarketOrder[]
-  // sendTxDeposit: (amount: number | string, addressToken: string) => Promise<void>
-  // sendTxWithdraw: (amount: number | string, addressToken: string) => Promise<void>
+  loadingAllIdOwner: boolean
+  sendTxCreate: () => Promise<void>
+  loadingDataMap: boolean
+  loadDataById: (_id: string) => Promise<void>
+  dataMap: DataMap
+  sendTxAdd: (_id: string, where: string) => Promise<void>
+  sendTxEdit: (_id: string, where: string) => Promise<void>
+  sendTxTransferOwer: (_id: string, _address: string) => Promise<void>
+  sendTxcloseTracking: (_id: string) => Promise<void>
+  loadingTx: boolean
+  setOrderMap: React.Dispatch<React.SetStateAction<MapRoute[]>>
 }
 
 export const ContractContext = createContext<IContract>({
@@ -38,30 +28,18 @@ export const ContractContext = createContext<IContract>({
   orderMap: [],
   loadingMap: false,
   loadAllIDByOwner: async () => {},
-  allIdOwner:[],
-  loadingAllIdOwner:false
-  // loadingOrderSell: false,
-  // loadingOrderBuy: false,
-  // loadOrderBook: async () => {},
-  // orderBookSell: [],
-  // orderBookBuy: [],
-  // priceToken: "",
-  // sendTxMarketOrder: async () => {},
-  // balancesSpotToken0: "",
-  // balancesTradeToken0: "",
-  // balancesSpotToken1: "",
-  // balancesTradeToken1: "",
-  // sendTxLimitOrder: async () => {},
-  // isLoadingOrderBookByAddress: false,
-  // orderBookByAddress: [],
-  // loadOrderBookByAddress: async () => {},
-  // sendTxCancelOrder: async () => {},
-  // sendTxUpdateOrder: async () => {},
-  // marketEvent: [],
-  // historyOrderEvent: [],
-  // sumMarketEvent: [],
-  // sendTxDeposit: async () => {},
-  // sendTxWithdraw:async () => {},
+  allIdOwner: [],
+  loadingAllIdOwner: false,
+  sendTxCreate: async () => {},
+  loadingDataMap: false,
+  loadDataById: async () => {},
+  dataMap: { address: '', isOpen: false },
+  sendTxAdd: async () => {},
+  sendTxEdit: async () => {},
+  sendTxTransferOwer: async () => {},
+  sendTxcloseTracking: async () => {},
+  loadingTx: false,
+  setOrderMap: (() => undefined),
 })
 
 
@@ -95,6 +73,13 @@ export const ContractProvider = ({ children }: ChildrenProps) => {
   const [allIdOwner, setAllIdOwner] = useState<IDByOnwer[]>([])
   const [loadingAllIdOwner, setLoadingAllIdOwner] = useState(false)
 
+  // Data Map By ID
+  const [dataMap, setDataMap] = useState<DataMap>({address:"",isOpen:false})
+  const [loadingDataMap, setLoadingDataMap] = useState(false)
+
+  // tx status
+  const [loadingTx,setLoadingTx] = useState(false)
+
   // helper
   // const toString = (bytes32) => ethers.utils.parseBytes32String(bytes32)
   const toWei = (ether :string|number) => ethers.utils.parseEther(String(ether))
@@ -106,33 +91,88 @@ export const ContractProvider = ({ children }: ChildrenProps) => {
  
   
   useEffect(() => {
-    if (!window.ethereum) return console.log('Please install metamask')
+    if (!window.ethereum) return alert('Please install metamask')
     setInitialLoading(false)
 
    }, [])
 
-  //  const sendTxAdd = async (_id : string , where : string) => {
-  //    if (!window.ethereum) return console.log('Please install metamask')
-  //    try {
-  //     const contract = getTrackingContract()
-  //     const transactionHash = await contract.addMapRoute(_id, where)
-  //     console.log(transactionHash.hash)
-  //     await transactionHash.wait()
-  //    } catch (error) {
-  //      console.log(error)
-  //    }
-  //    loadBalances()
-  //  }
+   const sendTxCreate = async () => {
+     
+     try {
+       setLoadingTx(true)
+       const contract = getTrackingContract()
+       const transactionHash = await contract.createNewRouteTracking()
+       await transactionHash.wait()
+        setLoadingTx(false)
+     } catch (error) {
+      setLoadingTx(false)
+       alert(error)
+     }
+     loadAllIDByOwner()
+   }
+   const sendTxAdd = async (_id : string , where : string) => {
+     
+     try {
+      setLoadingTx(true)
+      const contract = getTrackingContract()
+      const transactionHash = await contract.addMapRoute(_id, where)
+      await transactionHash.wait()
+      setLoadingTx(false)
+     } catch (error) {
+      setLoadingTx(false)
+       alert(error)
+     }
+     loadMap(_id)
+   }
+   const sendTxEdit = async (_id : string , where : string) => {
+     
+     try {
+      setLoadingTx(true)
+      const contract = getTrackingContract()
+      const transactionHash = await contract.editMapRoute(_id, where)
+      await transactionHash.wait()
+      setLoadingTx(false)
+     } catch (error) {
+      setLoadingTx(false)
+       alert(error)
+     }
+     loadMap(_id)
+   }
+   const sendTxTransferOwer = async (_id: string, _address: string) => {
+     
+     try {
+      setLoadingTx(true)
+       const contract = getTrackingContract()
+       const transactionHash = await contract.transferOwerTracking(_id, _address)
+       await transactionHash.wait()
+       setLoadingTx(false)
+     } catch (error) {
+      setLoadingTx(false)
+       alert(error)
+     }
+      loadDataById(_id)
+   }
+   const sendTxcloseTracking = async (_id: string) => {
+     try {
+       setLoadingTx(true)
+       const contract = getTrackingContract()
+       const transactionHash = await contract.closeTracking(_id)
+       await transactionHash.wait()
+       setLoadingTx(false)
+     } catch (error) {
+      setLoadingTx(false)
+       alert(error)
+     }
+     loadDataById(_id)
+   }
   
 
 
   const loadMap = async (_id : string) => {
-    if (!window.ethereum) return console.log('Please install metamask')
 
     setLoadingMap(true)
     try {
       if(_id === "") return alert("pls input")
-      console.log("Load map")
     
       setOrderMap([])
 
@@ -154,29 +194,26 @@ export const ContractProvider = ({ children }: ChildrenProps) => {
     } catch (error) {
        setLoadingMap(false)
        setOrderMap([])
-       console.log(error)
+       alert(error)
     }
 
   }
 
   const loadAllIDByOwner = async () => {
-    if (!window.ethereum) return console.log('Please install metamask')
 
     setLoadingAllIdOwner(true)
     try {
-      console.log('Load loadAllIDByOwner')
+
     
       setAllIdOwner([])
 
       const contract = getTrackingContract()
 
       const data = await contract.readAllIDOwner()
-      console.log("data",data)
-      data.map((item:IDByOnwer) => {
+      data.map((item: ethers.BigNumber) => {
         const structID: IDByOnwer = {
-          id: toEtherandFixFloatingPoint(item as any)
+          id: item.toNumber(),
         }
-        console.log('structID', structID)
         setAllIdOwner((prev) => [...prev, structID])
       })
 
@@ -186,7 +223,38 @@ export const ContractProvider = ({ children }: ChildrenProps) => {
     } catch (error) {
        setLoadingAllIdOwner(false)
        setAllIdOwner([])
-       console.log(error)
+       alert(error)
+    }
+
+  }
+
+  const loadDataById = async (_id:string) => {
+
+
+    setLoadingDataMap(true)
+    try {
+    
+      setDataMap({ address: '', isOpen: false })
+
+      const contract = getTrackingContract()
+
+      const data = await contract.getDataByID(_id)
+
+        const structID: DataMap = {
+          address: data.owner,
+          isOpen: data.isOpen,
+        }
+
+        setDataMap(structID)
+      
+
+
+      setLoadingDataMap(false)
+
+    } catch (error) {
+       setLoadingDataMap(false)
+       setDataMap({ address: '', isOpen: false })
+       alert(error)
     }
 
   }
@@ -200,9 +268,25 @@ export const ContractProvider = ({ children }: ChildrenProps) => {
         loadMap,
         orderMap,
         loadingMap,
+
         loadAllIDByOwner,
         allIdOwner,
-        loadingAllIdOwner
+        loadingAllIdOwner,
+
+        loadingDataMap,
+        loadDataById,
+        dataMap,
+
+        loadingTx,
+
+        setOrderMap,
+
+
+        sendTxCreate,
+        sendTxAdd,
+        sendTxEdit,
+        sendTxTransferOwer,
+        sendTxcloseTracking,
       }}
     >
       {!initialLoading && children}
