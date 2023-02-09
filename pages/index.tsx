@@ -7,9 +7,10 @@ import { polygonMumbai } from 'wagmi/chains'
 import { ethers } from 'ethers'
 import Header from '../components/Header'
 import FindID from '../components/FindID'
+import { useContext, useEffect } from 'react'
+import { ContractContext } from '../context/ContratContext'
 
 const Home = () => {
-
 
   const mounted = useIsMounted()
 
@@ -24,6 +25,7 @@ const Home = () => {
   return (
     <>
       {mounted && (
+        
         <div>
           <Header />
           {/* {mounted ? address && <p>My address is {address}</p> : null} */}
